@@ -1,0 +1,16 @@
+FROM golang:1.12-alpine as builder
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache make git 
+COPY . .
+RUN make
+
+FROM nginx:1.15-alpine
+LABEL maintainer="Abubakr-Sadik Nii Nai Davis <dwa2pac@gmail.com>"
+
+RUN  mkdir -p /etc/watchman/nginx
+COPY --from=builder /usr/src/app/bin/watchman /usr/local/bin
+COPY templates/nginx/service.tmpl /etc/watchman/nginx
+
+VOLUME /var/run/docker.sock
+ENTRYPOINT ["/usr/local/bin/watchman"]
