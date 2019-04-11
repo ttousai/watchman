@@ -12,5 +12,10 @@ RUN  mkdir -p /etc/watchman/nginx
 COPY --from=builder /usr/src/app/bin/watchman /usr/local/bin
 COPY templates/nginx/service.tmpl /etc/watchman/nginx
 
+# Remove NGINX access.log and error.log symlinks to stdout
+RUN unlink /var/log/nginx/access.log && \
+    unlink /var/log/nginx/error.log && \
+    touch /var/log/nginx/access.log /var/log/nginx/error.log
+
 VOLUME /var/run/docker.sock
 ENTRYPOINT ["/usr/local/bin/watchman"]
