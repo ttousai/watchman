@@ -34,6 +34,12 @@ func (p *intervalProcessor) process() {
 			p.errChan <- err
 		}
 
+		log.Info("Verify NGINX serivce confgs")
+		p.verifyConfig()
+		if err != nil {
+			p.errChan <- err
+		}
+
 		if restart {
 			log.Info("Reloading NGINX configuration")
 			// TODO: need to handle case of restart failing.
@@ -100,4 +106,12 @@ func (p *intervalProcessor) reloadServerConfig() error {
 	cmd := exec.Command("nginx", "-s", "reload")
 	err := cmd.Run()
 	return err
+}
+
+func (p *intervalProcessor) verifyConfig() {
+	cmd := exec.Command("nginx", "-T")
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatal(string(stdoutStderr))
+	}
 }

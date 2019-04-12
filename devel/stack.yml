@@ -1,0 +1,115 @@
+version: "3"
+services:
+
+  insyt-api:
+    image: esoko/insyt-api:v2.3.9-canary
+    environment:
+      - PG_USER=insyt
+      - PG_DBNAME=insyt
+      - PG_HOST=pg96.storage.esoko.com
+      - PG_PORT=5432
+      - API_RELEASE_STAGE=production
+      - API_BASE_URL=https://api.insyt.esoko.com/api/v1
+      - SLACK_WEBHOOK_URL=https://hooks.slack.com/services/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
+      - SLACK_WEBHOOK_NOTIFICATIONS_URL=https://hooks.slack.com/services/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
+      - SLACK_NOTIFICATION_CHANNEL=insyt-notifications
+      - SENDER_EMAIL_ADDRESS=noreply@esoko.com
+      - SMTP_EMAIL_ADDRESS=mail@busylab.com
+      - SMTP_HOST=secure.emailsrvr.com
+      - ELASTICSEARCH_URL=http:es.storage.esoko.com:9200
+      - PROMETHEUS_URL_SERVER=https://insyt-metrics-api.esoko.com/api/logs
+      - RMQ_USER=insyt
+      - RMQ_HOST=rmq.storage.esoko.com/insyt
+      - ATTACH_CARD_API_URL=
+      - INSYT_JWT_SECRET=
+      - RECAPTCHA_SITE_KEY=
+      - RECAPTCHA_SECRET_KEY=
+      - RMQ_PASSWORD=
+      - SLACK_FILE_UPLOAD_TOKEN=
+      - SMTP_PASSWORD=
+      - PAYSWITCH_AUTHORIZATION_TOKEN=
+      - PG_PASSWD=
+    volumes:
+      - insyt-api-volume:/data
+    networks:
+      - insyt-net
+    deploy:
+      labels:
+        watchman.service.enable: "true"
+        watchman.service.port: "1900"
+        watchman.service.url: "api.insyt.esoko.com"
+      placement:
+        constraints:
+          - node.role == worker
+          - node.labels.rack == storage
+          - node.labels.rack.api == api
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        reservations:
+          memory: 2G
+
+  insyt-web:
+    image: esoko/insyt-web:v2.3.9-canary
+    networks:
+      - insyt-net
+    deploy:
+      labels:
+        watchman.service.enable: "true"
+        watchman.service.port: "1920"
+        watchman.service.url: "web.insyt.esoko.com"
+      placement:
+        constraints:
+          - node.role == worker
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        reservations:
+          memory: 500M
+
+  # Internal service.
+  # Please create DNS A Record with private address of swarm manager
+  # and don't publish through NGINX, to prevent Information Leakage.
+  insyt-metrics:
+    image: esoko/insyt-metrics:v2.3.9-canary
+    networks:
+      - insyt-net
+    ports:
+      - "1901:1901"
+    deploy:
+      placement:
+        constraints:
+          - node.role == worker
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        reservations:
+          memory: 500M
+
+  nginx:
+    image: watchman:local
+    command: ["--log-level", "DEBUG"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - insyt-net
+    ports:
+      - "80:80"
+      - "443:443"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  insyt-api-volume:
+
+networks:
+  insyt-net:
+    driver: overlay
