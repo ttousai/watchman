@@ -1,0 +1,43 @@
+version: "3.7"
+services:
+
+  api:
+    image: someapi
+    networks:
+      - shared-net
+    deploy:
+      labels:
+        watchman.service.enable: "true"
+        watchman.service.port: "1900"
+        watchman.service.url: "api.domain.com"
+      restart_policy:
+        condition: on-failure
+
+  web:
+    image: someweb
+    networks:
+      - shared-net
+    deploy:
+      labels:
+        watchman.service.enable: "true"
+        watchman.service.port: "1920"
+        watchman.service.url: "domain.com"
+      restart_policy:
+        condition: on-failure
+
+  nginx:
+    image: ttousai/watchman:v0.1.0-alpha.1
+    command: ["--log-level", "DEBUG"]
+    networks:
+      - shared-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "80:80"
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  shared-net:
+    driver: overlay

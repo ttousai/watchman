@@ -16,5 +16,5 @@ test:
 	@go test ./...
 
 release:
-	@docker build -q -t ttousai/watchman:${GIT_TAG} -f Dockerfile.alpine .
-	@docker push ttousai/watchman:${GIT_TAG}
+	@docker build -t ttousai/watchman:${GIT_TAG} -f Dockerfile.alpine .
+	@echo "run docker push ttousai/watchman:${GIT_TAG}"
